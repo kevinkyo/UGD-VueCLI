@@ -1,6 +1,7 @@
 <template>
     <v-main class="list">
         <h3 class="text-h3 font-weight-medium mb-5">To Do List</h3>
+
         <v-card>
             <v-card-title primary-title>
                 <v-text-field
@@ -10,24 +11,43 @@
                 single-line
                 hide-details></v-text-field>
                 <v-spacer></v-spacer>
+                <v-select
+                    :items="['All Priority','Penting', 'Biasa', 'Tidak Penting']"
+                    v-model="filters"
+                    label="Priority"
+                    @change="filterPriority"
+                    outlined
+                    hide-details
+                    class="mr-4"
+                    dense></v-select>
+                <v-chip
+                    class="ma-2"
+                    color="primary"
+                    >
+                    Primary
+                </v-chip>
+                <v-btn color="primary" dark @click="dialog = true">Todo Selesai</v-btn>
                 <v-btn color="success" dark @click="dialog = true">Tambah</v-btn>
             </v-card-title>
-            <v-data-table :headers="headers" :items="todos" :search="search" pagination.sync="pagination">
+            
+            <v-data-table :headers="headers" :items="filterPriority" :search="search" pagination.sync="pagination">
                 <template v-slot:[`item.actions`]="{ item }">
-                    <v-btn small class="mr-2" @click="editItem(item)">
-                    edit
-                    </v-btn>
-                    <v-btn small @click="deleteItem(item)">
-                    delete
-                    </v-btn>
+                    <v-icon small color="red" class="mr-2" @click="editItem(item)">
+                    mdi-pencil
+                    </v-icon>
+                    <v-icon color="blue" small @click="deleteItem(item)">
+                    mdi-delete
+                    </v-icon>
                 </template>
             </v-data-table>
         </v-card>
+
         <v-dialog
             v-model="dialog"
             persistent
             max-width="600px"
-            transition="dialog-transition">
+            transition="dialog-transition"
+        >
             <v-card>
                 <v-card-title>
                     <span class="headline">From Todo</span>
@@ -42,7 +62,7 @@
                         <v-select
                             :items="['Penting', 'Biasa', 'Tidak Penting']"
                             v-model="formTodo.priority"
-                            label="Priority"
+                            label="All Priority"
                             required
                         ></v-select>
                         <v-textarea
@@ -59,8 +79,6 @@
         </v-dialog>
     </v-main>
 </template>
-
-
 <script>
 export default {
     name:"List",
@@ -68,6 +86,9 @@ export default {
         return {
             search:null,
             dialog:false,
+            tempTodo:null,
+            filters:"All Priority",
+            selected: [],
             headers: [
                 {
                     text:'Task',
@@ -100,8 +121,8 @@ export default {
     },
     methods: {
         save(){
-            let index=  this.findIndexTodos(this.formTodo);
-            if(index < 0){
+            let index =  this.findIndexTodos(this.formTodo);
+            if(index < 0){ // alias ga ketemu -1
                 this.todos.push(this.formTodo);
             }else {
                 this.todos[index] = this.formTodo;
@@ -110,6 +131,13 @@ export default {
             this.dialog = false;
         },
         cancel(){
+            let index =  this.findIndexTodos(this.formTodo);
+            if(index < 0){ // alias ga ketemu -1
+                this.todos.push(this.tempTodo);
+            }else {
+                this.todos[index] = this.tempTodo;
+            }
+            console.log(this.tempTodo);
             this.resetForm();
             this.dialog = false;
         },
@@ -121,12 +149,11 @@ export default {
             };
         },
         editItem(item){
-            let index = this.findIndexTodos(item);
             this.formTodo = item;
             this.dialog = true;
         },
         deleteItem(item){
-            let x = window.confirm("Yakin ingin menghapus?");
+            let x = window.confirm("Apa yakin ingin menghapus?  ");
             if(x === true){
                 let index = this.findIndexTodos(item);
                 this.todos.splice(index,1);
@@ -134,7 +161,23 @@ export default {
         },
         findIndexTodos(item){
             return this.todos.findIndex(obj => obj.task === item.task);
-        }
+        },
+        
     },
+    computed: {
+        filterPriority(){
+            let finds = this.filters;
+            if(finds == "All Priority"){
+                return this.todos;
+            }else {
+                var fil = this.todos.filter(function(x){
+                    return x.priority == finds;
+                })
+                return fil;
+            }
+            
+        },
+    }
+    
 };
 </script>
